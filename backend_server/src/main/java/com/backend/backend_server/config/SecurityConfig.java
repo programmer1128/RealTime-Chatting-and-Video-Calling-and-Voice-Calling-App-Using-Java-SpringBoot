@@ -23,52 +23,56 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Autowired
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
+     @Autowired
+     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    @Autowired
-    private JwtEntryPoint jwtEntryPoint;
+     @Autowired
+     private JwtEntryPoint jwtEntryPoint;
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+     @Bean
+     public PasswordEncoder passwordEncoder() 
+     {
+         return new BCryptPasswordEncoder();
+     }
 
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
-    }
+     @Bean
+     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception 
+     {
+         return authenticationConfiguration.getAuthenticationManager();
+     }
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            .csrf(AbstractHttpConfigurer::disable)
-            .cors(Customizer.withDefaults())
-            .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtEntryPoint))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/auth/**").permitAll()
-                .requestMatchers("/api/messages/**", "/messages/**").permitAll()
-                .requestMatchers("/video-call/**", "/ws-chat/**", "/ws/**").permitAll()
-                .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
-                .anyRequest().authenticated()
-            )
-            .httpBasic(Customizer.withDefaults())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+     @Bean
+     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception 
+     {
+         http
+             .csrf(AbstractHttpConfigurer::disable)
+             .cors(Customizer.withDefaults())
+             .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtEntryPoint))
+             .authorizeHttpRequests(auth -> auth
+                 .requestMatchers("/api/auth/**", "/auth/**").permitAll()
+                 .requestMatchers("/api/messages/**", "/messages/**").permitAll()
+                 .requestMatchers("/video-call/**", "/ws-chat/**", "/ws/**").permitAll()
+                 .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+                 .anyRequest().authenticated()
+             )
+             .httpBasic(Customizer.withDefaults())
+             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
-        return http.build();
-    }
+         return http.build();
+     }
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("*"));
-        configuration.setAllowCredentials(true);
-        configuration.addAllowedHeader("*");
-        configuration.addAllowedMethod("*");
+     @Bean
+     public CorsConfigurationSource corsConfigurationSource() 
+     {
+         CorsConfiguration configuration = new CorsConfiguration();
+         configuration.setAllowedOriginPatterns(List.of("*"));
+         configuration.setAllowCredentials(true);
+         configuration.addAllowedHeader("*");
+         configuration.addAllowedMethod("*");
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
+         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+         source.registerCorsConfiguration("/**", configuration);
+         return source;
+     }
 }

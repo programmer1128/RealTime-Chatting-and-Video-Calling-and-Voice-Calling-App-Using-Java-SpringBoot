@@ -15,55 +15,65 @@ import com.backend.backend_server.repository.UserRepository;
 import com.backend.backend_server.data_transfer_objects.UserInfo;
 
 @Service
-public class UserService implements UserDetailsService {
+public class UserService implements UserDetailsService 
+{
 
-    @Autowired
-    private UserRepository userRepository;
+     @Autowired
+     private UserRepository userRepository;
 
-    @Autowired
-    private AuditService auditService;
+     @Autowired
+     private AuditService auditService;
 
-    public List<User> findAllUsers() {
-        return userRepository.findAll();
-    }
+     public List<User> findAllUsers() 
+     {
+         return userRepository.findAll();
+     }
 
-    public List<User> findAllRegularUsers() {
-        return userRepository.findByRole(Role.USER);
-    }
+     public List<User> findAllRegularUsers() 
+     {
+         return userRepository.findByRole(Role.USER);
+     }
 
-    public User findUserById(Long id) {
-        return userRepository.findById(id)
+     public User findUserById(Long id) 
+     {
+         return userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + id));
-    }
+     }
 
-    public User updateStatus(Long id, String newStatus) {
-        User user = findUserById(id);
-        user.setStatus(newStatus);
-        if ("APPROVED".equals(newStatus)) {
-            user.setPersonnelId(generatePersonnelID(user.getUsername()));
-        }
-        auditService.logAction("STATUS_CHANGED", "ADMIN", user, "Status changed to " + newStatus);
-        return userRepository.save(user);
-    }
+     public User updateStatus(Long id, String newStatus) 
+     {
+         User user = findUserById(id);
+         user.setStatus(newStatus);
+         if ("APPROVED".equals(newStatus)) 
+         {
+             user.setPersonnelId(generatePersonnelID(user.getUsername()));
+         }
+         auditService.logAction("STATUS_CHANGED", "ADMIN", user, "Status changed to " + newStatus);
+         return userRepository.save(user);
+     }
 
-    public User findUserByUsername(String username) {
-        return userRepository.findByUsername(username)
+     public User findUserByUsername(String username) 
+     {
+         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
-    }
+     }
 
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return findUserByUsername(username);
-    }
+     @Override
+     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException 
+     {
+         return findUserByUsername(username);
+     }
 
-    public List<UserInfo> findUsersByGroup(String groupName) {
-        return userRepository.findAll().stream()
+     public List<UserInfo> findUsersByGroup(String groupName) 
+     {
+         return userRepository.findAll().stream()
                 .filter(user -> user.getGroupsalloted() != null && user.getGroupsalloted().contains(groupName))
                 .map(UserInfo::new)
                 .collect(Collectors.toList());
-    }
+     }
 
-    private String generatePersonnelID(String username) {
-        return Base64.getEncoder().encodeToString(username.getBytes());
-    }
+     private String generatePersonnelID(String username) 
+     {
+         return Base64.getEncoder().encodeToString(username.getBytes());
+     }
 }
