@@ -1,86 +1,106 @@
 package com.backend.backend_server.controller;
 
-
 import java.util.Map;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.web.bind.annotation.*;
 import com.backend.backend_server.data_transfer_objects.LoginRequest;
 import com.backend.backend_server.data_transfer_objects.LoginResponse;
 import com.backend.backend_server.data_transfer_objects.UserVerifyRequest;
+import com.backend.backend_server.dto.AuthRequestDTO;
+import com.backend.backend_server.dto.AuthResponseDTO;
+import com.backend.backend_server.dto.BeforeLoginDTO;
+import com.backend.backend_server.dto.UserDTO;
+import com.backend.backend_server.dto.UserLoginDTO;
 import com.backend.backend_server.entity.User;
 import com.backend.backend_server.service.AppLoginService;
 import com.backend.backend_server.service.AuthService;
-@RestController 
-@RequestMapping("/auth")
-public class AuthController 
-{ 
+import com.backend.backend_server.service.UserService;
 
-     @Autowired
-     AuthService authService;
+@RestController
+@RequestMapping("/api/auth")
+@CrossOrigin(origins = "*")
+public class AuthController {
 
-     @Autowired
-     AppLoginService appLoginService;
+    @Autowired
+    private AuthService authService;
 
-     @PostMapping("/user/verify")
-     public ResponseEntity<?> verifyUser(@RequestBody UserVerifyRequest request)
-     {
-         try
-         {
-             User user=authService.validateLogin(request);
-             LoginResponse response = new LoginResponse();
+    @Autowired
+    private AppLoginService appLoginService;
 
-             //making the response that will be send as json to the frontend
-             response.setEmail(user.getEmail());
-             response.setUsername(user.getUsername());
-             response.setFullname(user.getFullname());
-             response.setGroupsAlloted(user.getGroupsalloted());
-             response.setId(user.getId());
-             response.setPersonelid(user.getPersonelid());
-             response.setRole(user.getRole());
+    @Autowired
+    private UserService userService;
 
-             return ResponseEntity.ok(response);   
-         }
-         catch(RuntimeException e)
-         {  
-             Map<String,String> error= Map.of("message","invalid usernameorpassword");
-             return new ResponseEntity<>(error,HttpStatus.UNAUTHORIZED);
-         }
-         
+    // --- Original Auth Endpoints ---
 
-         //return ResponseEntity.ok(response);   
-     }
+    @PostMapping("/user/verify")
+    public ResponseEntity<?> verifyUser(@RequestBody UserVerifyRequest request) {
+        try {
+            User user = authService.validateLogin(request);
+            return ResponseEntity.ok(convertToLoginResponse(user));
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(Map.of("message", e.getMessage()), HttpStatus.UNAUTHORIZED);
+        }
+    }
 
-     @PostMapping("/login")
-     public ResponseEntity<?> login(@RequestBody LoginRequest request)
-     {
-         User user = appLoginService.validatePassword(request);
-         if(user!=null)
-         {
-             //the password entered by the user is correct and we will response dto and send it
-             //back to the frontend
-             LoginResponse response = new LoginResponse();
+    @PostMapping("/old-login")
+    public ResponseEntity<?> oldLogin(@RequestBody LoginRequest request) {
+        User user = appLoginService.validatePassword(request);
+        if (user != null) {
+            return ResponseEntity.ok(convertToLoginResponse(user));
+        }
+        return new ResponseEntity<>(Map.of("message", "Invalid username or password"), HttpStatus.UNAUTHORIZED);
+    }
 
-             //making the response that will be send as json to the frontend
-             response.setEmail(user.getEmail());
-             response.setUsername(user.getUsername());
-             response.setFullname(user.getFullname());
-             response.setGroupsAlloted(user.getGroupsalloted());
-             response.setId(user.getId());
-             response.setPersonelid(user.getPersonelid());
-             response.setRole(user.getRole());
+    // --- New JWT/OTP Auth Endpoints ---
 
-             return ResponseEntity.ok(response);
-         }
-         Map<String,String> error= Map.of("message","invalid usernameorpassword");
-         return new ResponseEntity<>(error,HttpStatus.UNAUTHORIZED);
-         //return appLoginService.validatePassword(request); 
-     }
+    @PostMapping("/register")
+    public ResponseEntity<User> register(@RequestBody AuthRequestDTO request) {
+        return new ResponseEntity<>(authService.registerUser(request), HttpStatus.CREATED);
+    }
 
+    @PostMapping("/login")
+    public ResponseEntity<BeforeLoginDTO> login(@RequestBody AuthRequestDTO request) {
+        return ResponseEntity.ok(authService.loginUser(request));
+    }
+
+    @PostMapping("/otp-auth")
+    public ResponseEntity<UserDTO> otpAuthenticate(@RequestBody UserLoginDTO request) {
+        return ResponseEntity.ok(authService.issueAccessToken(request));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@RequestHeader("Authorization") String token) {
+        String jwt = token.startsWith("Bearer ") ? token.substring(7) : token;
+        authService.logoutUser(jwt);
+        SecurityContextHolder.clearContext();
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<User> getAuthenticatedUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        try {
+            return ResponseEntity.ok(userService.findUserByUsername(username));
+        } catch (UsernameNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    private LoginResponse convertToLoginResponse(User user) {
+        LoginResponse response = new LoginResponse();
+        response.setEmail(user.getEmail());
+        response.setUsername(user.getUsername());
+        response.setFullname(user.getFullname());
+        response.setGroupsAlloted(user.getGroupsalloted());
+        response.setId(user.getId());
+        response.setPersonelid(user.getPersonnelId());
+        response.setRole(user.getRole() != null ? user.getRole().name() : null);
+        return response;
+    }
 }

@@ -8,58 +8,48 @@ import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
-/**
- * Controller to handle both REST API requests for message history
- * and WebSocket messages for live chat.
- */
-@Controller //
-@RequestMapping("/api")
-public class MessageController 
-{
+@RestController
+@RequestMapping("/api/messages")
+@CrossOrigin(origins = "*")
+public class MessageController {
 
-     // inject a MessageService to handle the business logic.
-     @Autowired
-     private MessageService messageService;
+    @Autowired
+    private MessageService messageService;
 
-     /**
-     * REST Endpoint (HTTP GET)
-     * Fetches the historical messages for a specific group chat.
-     * The app will call this endpoint when the user opens a chat screen.
-     *
-     * @param groupId The ID of the group to fetch messages for.
-     * @return A list of all messages for that group.
-     */
-     @GetMapping("/messages/group/{groupId}")
-     public ResponseEntity<List<Message>> getGroupMessages(@PathVariable String groupId) 
-     {
-         List<Message> messages = messageService.findMessagesByGroupId(groupId);
-         return ResponseEntity.ok(messages);
-     }
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
-     /**
-     * WebSocket Endpoint (STOMP)
-     * This method is invoked when a message is sent to a destination like "/app/group-chat/{groupId}".
-     * It saves the message to the database and then broadcasts it to all subscribers
-     * of the "/topic/group/{groupId}" destination.
-     *
-     * @param message The chat message sent by the client.
-     * @param groupId The group ID from the destination path.
-     * @return The saved message, which will be broadcast by the @SendTo annotation.
-     */
-     @MessageMapping("/group-chat/{groupId}")
-     @SendTo("/topic/group/{groupId}")
-     public Message handleGroupMessage(@Payload Message message, @DestinationVariable String groupId) 
-     {
-         // The message is saved to the database.
-         Message savedMessage = messageService.saveMessage(message);
-         // The saved message (now with a real ID and timestamp) is returned and broadcast.
-         return savedMessage;
-     }
+    @PostMapping("/send")
+    public ResponseEntity<Message> sendMessage(@RequestParam Long senderId, @RequestParam Long receiverId,
+                                             @RequestParam String content) {
+        return ResponseEntity.ok(messageService.sendMessage(senderId, receiverId, content));
+    }
+
+    @GetMapping("/chat")
+    public ResponseEntity<List<Message>> getChat(@RequestParam Long user1, @RequestParam Long user2) {
+        return ResponseEntity.ok(messageService.getChat(user1, user2));
+    }
+
+    @GetMapping("/group/{groupId}")
+    public ResponseEntity<List<Message>> getGroupMessages(@PathVariable String groupId) {
+        return ResponseEntity.ok(messageService.findMessagesByGroupId(groupId));
+    }
+
+    @MessageMapping("/group-chat/{groupId}")
+    @SendTo("/topic/group/{groupId}")
+    public Message handleGroupMessage(@Payload Message message, @DestinationVariable String groupId) {
+        message.setGroupId(groupId);
+        return messageService.saveMessage(message);
+    }
+
+    @MessageMapping("/chat.send")
+    public void sendMessageWebSocket(Message msg) {
+        Message saved = messageService.sendMessage(msg.getSender().getId(), msg.getReceiverId(), msg.getContent());
+        messagingTemplate.convertAndSend("/topic/messages." + msg.getReceiverId(), saved);
+        messagingTemplate.convertAndSend("/topic/messages." + saved.getSender().getId(), saved);
+    }
 }

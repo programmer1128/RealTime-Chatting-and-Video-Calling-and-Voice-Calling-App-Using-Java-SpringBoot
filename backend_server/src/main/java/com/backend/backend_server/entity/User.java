@@ -1,182 +1,113 @@
 package com.backend.backend_server.entity;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-
+import java.util.Set;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import jakarta.persistence.*;
 
 @Entity
-@Table(name="users2")
-public class User 
-{
-     @Id //marks this as the primary key
-     @GeneratedValue(strategy=GenerationType.IDENTITY)
-     private long id;
+@Table(name = "users")
+public class User implements UserDetails {
 
-     @Column(nullable=false)
-     private String username;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-     @Column(name="name",nullable=false)
-     private String fullname;
+    @Column(unique = true, nullable = false)
+    private String username;
 
-     @Column(unique=true,nullable=false)
-     private String personelid;
+    private String fullname;
 
+    @Column(unique = true)
+    private String personnelId;
 
-     @Column(unique=true,nullable=false)
-     private String email;
+    @Column(unique = true)
+    private String email;
 
-     @Column(nullable=false)
-     private String role;
+    private String mobileNumber;
 
-     @ElementCollection
-     private List<String> groupsalloted;
+    private String password;
 
-     @Column(nullable=true)
-     private String password;
+    @Enumerated(EnumType.STRING)
+    private Role role;
 
-     @Column(nullable=true)
-     private String otp;
-     //default constructor
+    private String status;
 
+    private String otp;
 
-     @Column(nullable=true)
-     private LocalDateTime otpExpiry;
+    private LocalDateTime otpExpiry;
 
-     public User()
-     {
+    @ElementCollection
+    private List<String> groupsalloted;
 
-     }
+    @ManyToMany(mappedBy = "members")
+    private Set<Group> groups = new HashSet<>();
 
-     //now we add the getters and setters for all the fields that our user will have
+    public User() {}
 
-     //setter for the id
-     public void setId(long id)
-     {
-         this.id=id;
-     }
-     //getter for the id
-     public long getId()
-     {
-         return this.id;
-     }
+    // Getters and Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    
+    @Override
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
 
+    public String getFullname() { return fullname; }
+    public void setFullname(String fullname) { this.fullname = fullname; }
 
-     //setter for the username
-     public void setUsername(String username)
-     {
-         this.username=username;
-     }
-     
-     //getter for the username
-     public String getUsername()
-     {
-         return this.username;
-     }
+    public String getPersonnelId() { return personnelId; }
+    public void setPersonnelId(String personnelId) { this.personnelId = personnelId; }
 
-     //setter for the fullname
-     public void setFullname(String fullname)
-     {
-         this.fullname=fullname;
-     }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 
-     //getter for the fullname
-     public String getFullname()
-     {
-         return this.fullname;
-     }
+    public String getMobileNumber() { return mobileNumber; }
+    public void setMobileNumber(String mobileNumber) { this.mobileNumber = mobileNumber; }
 
-     //setter for the personelid
-     public void setPersonelid(String personelid)
-     {
-         this.personelid=personelid;
-     }
+    @Override
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
 
-     //getter for the personel id
-     public String getPersonelid()
-     {
-         return this.personelid;
-     }
+    public Role getRole() { return role; }
+    public void setRole(Role role) { this.role = role; }
 
-     //setter for the email
-     public void setEmail(String email)
-     {
-         this.email=email;
-     }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 
-     //getter for the email
-     public String getEmail()
-     {
-         return this.email;
-     }
+    public String getOtp() { return otp; }
+    public void setOtp(String otp) { this.otp = otp; }
 
-     //setter for the role
-     public void setRole(String role)
-     {
-         this.role=role;
-     }
-      
-     //getter for the role
-     public String getRole()
-     {
-         return this.role;
-     }
+    public LocalDateTime getOtpExpiry() { return otpExpiry; }
+    public void setOtpExpiry(LocalDateTime otpExpiry) { this.otpExpiry = otpExpiry; }
 
-     //now for the groups alloted
-     public void setGroupsalloted(List<String> groupsalloted)
-     {
-         this.groupsalloted=groupsalloted;
-     }
+    public List<String> getGroupsalloted() { return groupsalloted; }
+    public void setGroupsalloted(List<String> groupsalloted) { this.groupsalloted = groupsalloted; }
 
-     //getter for the groups alloted
-     public List<String> getGroupsalloted()
-     {
-         return this.groupsalloted;
-     }
+    public Set<Group> getGroups() { return groups; }
+    public void setGroups(Set<Group> groups) { this.groups = groups; }
 
-     //setter for the otp
-     public void setOtp(String otp)
-     {
-         this.otp=otp;
-     }
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        if (role == null) return Collections.emptyList();
+        return Collections.singletonList(new SimpleGrantedAuthority(role.name()));
+    }
 
-     //getter for the otp
-     public String getOtp()
-     {
-         return this.otp;
-     }
+    @Override
+    public boolean isAccountNonExpired() { return true; }
 
-     //setter for the password
-     public void setPassword(String password)
-     {
-         this.password=password;
-     }
-      
-     //getter for the password
-     public String getPassword()
-     {
-         return this.password;
-     }
+    @Override
+    public boolean isAccountNonLocked() { return true; }
 
-     //setter for the Otpexpury time
-     public void setOtpExpiry(LocalDateTime otpExpiry)
-     {
-         this.otpExpiry= otpExpiry;
-     }
+    @Override
+    public boolean isCredentialsNonExpired() { return true; }
 
-     //getter for the otpexpiry
-
-     public LocalDateTime getOtpExpiry()
-     {
-         return this.otpExpiry;
-     }
-     
+    @Override
+    public boolean isEnabled() { return true; }
 }
-

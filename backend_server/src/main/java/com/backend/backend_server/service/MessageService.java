@@ -2,44 +2,39 @@ package com.backend.backend_server.service;
 
 import java.time.Instant;
 import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import com.backend.backend_server.entity.Message;
+import com.backend.backend_server.entity.User;
 import com.backend.backend_server.repository.MessageRepository;
+import com.backend.backend_server.repository.UserRepository;
 
-/**
- * Service class for handling all business logic related to chat messages.
- */
 @Service
-public class MessageService  
-{
+public class MessageService {
 
-     @Autowired
-     private MessageRepository messageRepository;
+    @Autowired
+    private MessageRepository messageRepository;
 
-     /**
-     * Retrieves all messages for a specific group, sorted by timestamp.
-     * @param groupId The ID of the group.
-     * @return A list of messages.
-     */
-     public List<Message> findMessagesByGroupId(String groupId) 
-     {
-         // We delegate the call directly to our repository's custom method.
-         return messageRepository.findByGroupIdOrderByTimestampAsc(groupId);
-     }
+    @Autowired
+    private UserRepository userRepository;
 
-     /**
-     * Saves a new message to the database. It sets the timestamp to the current moment
-     * before saving.
-     * @param message The message entity to save.
-     * @return The saved message entity (which will now have a database-generated ID).
-     */
-     public Message saveMessage(Message message) 
-     {
-         // Set the timestamp right before saving to ensure it's accurate.
-         message.setTimestamp(Instant.now());
-         return messageRepository.save(message);
-     }
+    public List<Message> findMessagesByGroupId(String groupId) {
+        return messageRepository.findByGroupIdOrderByTimestampAsc(groupId);
+    }
+
+    public Message saveMessage(Message message) {
+        message.setTimestamp(Instant.now());
+        return messageRepository.save(message);
+    }
+
+    public Message sendMessage(Long senderId, Long receiverId, String content) {
+        User sender = userRepository.findById(senderId)
+                .orElseThrow(() -> new RuntimeException("Sender not found"));
+        Message msg = new Message(sender, receiverId, null, content, Instant.now());
+        return messageRepository.save(msg);
+    }
+
+    public List<Message> getChat(Long userId1, Long userId2) {
+        return messageRepository.findChatBetweenUsers(userId1, userId2);
+    }
 }

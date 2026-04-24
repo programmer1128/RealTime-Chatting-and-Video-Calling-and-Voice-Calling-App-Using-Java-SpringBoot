@@ -1,93 +1,58 @@
 package com.backend.backend_server.entity;
 
 import java.time.Instant;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "messages")
-public class Message 
-{
+public class Message {
 
-     @Id
-     @GeneratedValue(strategy = GenerationType.IDENTITY)
-     private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-     // A link to the User who sent the message.
-     @ManyToOne
-     @JoinColumn(name = "sender_id", nullable = false)
-     private User sender;
+    @ManyToOne
+    @JoinColumn(name = "sender_id", nullable = false)
+    private User sender;
 
-     // The ID of the group chat this message belongs to (e.g., "command_group").
-     @Column(name = "group_id", nullable = false)
-     private String groupId;
+    @Column(name = "receiver_id")
+    private Long receiverId; // For direct messaging
 
-     // The text content of the message.
-     @Column(columnDefinition = "TEXT", nullable = false)
-     private String content;
+    @Column(name = "group_id")
+    private String groupId; // For group messaging
 
-     // The exact time the message was sent.
-     @Column(nullable = false)
-     private Instant timestamp;
+    @Column(columnDefinition = "TEXT", nullable = false)
+    private String content;
 
-   
+    @Column(nullable = false)
+    private Instant timestamp;
 
-     public Message() {}
+    public Message() {}
 
-     public Long getId() 
-     {
-         return id;
-     }
+    public Message(User sender, Long receiverId, String groupId, String content, Instant timestamp) {
+        this.sender = sender;
+        this.receiverId = receiverId;
+        this.groupId = groupId;
+        this.content = content;
+        this.timestamp = timestamp;
+    }
 
-     public void setId(Long id) 
-     {
-         this.id = id;
-     }
+    // Getters and Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-     public User getSender() 
-     {
-         return sender;
-     }
+    public User getSender() { return sender; }
+    public void setSender(User sender) { this.sender = sender; }
 
-     public void setSender(User sender) 
-     {
-         this.sender = sender;
-     }
+    public Long getReceiverId() { return receiverId; }
+    public void setReceiverId(Long receiverId) { this.receiverId = receiverId; }
 
-     public String getGroupId() 
-     {
-         return groupId;
-     }
+    public String getGroupId() { return groupId; }
+    public void setGroupId(String groupId) { this.groupId = groupId; }
 
-     public void setGroupId(String groupId) 
-     {
-         this.groupId = groupId;
-     }
+    public String getContent() { return content; }
+    public void setContent(String content) { this.content = content; }
 
-     public String getContent() 
-     {
-         return content;
-     }
-
-     public void setContent(String content) 
-     {
-         this.content = content;
-     }
-
-     public Instant getTimestamp() 
-     {
-         return timestamp;
-     }
-
-     public void setTimestamp(Instant timestamp) 
-     {
-         this.timestamp = timestamp;
-     }
+    public Instant getTimestamp() { return timestamp; }
+    public void setTimestamp(Instant timestamp) { this.timestamp = timestamp; }
 }

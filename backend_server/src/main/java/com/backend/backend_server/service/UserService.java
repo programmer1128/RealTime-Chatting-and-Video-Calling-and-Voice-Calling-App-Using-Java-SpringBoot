@@ -1,33 +1,69 @@
 package com.backend.backend_server.service;
 
 import java.util.List;
+import java.util.Base64;
+import java.util.Base64.Encoder;
 import java.util.stream.Collectors;
-
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-
-import com.backend.backend_server.data_transfer_objects.UserInfo;
+import com.backend.backend_server.entity.Role;
+import com.backend.backend_server.entity.User;
 import com.backend.backend_server.repository.UserRepository;
+import com.backend.backend_server.data_transfer_objects.UserInfo;
 
 @Service
-public class UserService 
-{
+public class UserService implements UserDetailsService {
 
-     @Autowired
-     private UserRepository userRepository;
+    @Autowired
+    private UserRepository userRepository;
 
-     /**
-     * Finds all users who are part of a specific group.
-     * @param groupName The name of the group to search for.
-     * @return A list of UserDTOs.
-     */
-     public List<UserInfo> findUsersByGroup(String groupName) 
-     {
-         // This is a simple implementation. In a real app with a proper Group entity,
-         // this query would be more direct.
-         return userRepository.findAll().stream()
+    @Autowired
+    private AuditService auditService;
+
+    public List<User> findAllUsers() {
+        return userRepository.findAll();
+    }
+
+    public List<User> findAllRegularUsers() {
+        return userRepository.findByRole(Role.USER);
+    }
+
+    public User findUserById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + id));
+    }
+
+    public User updateStatus(Long id, String newStatus) {
+        User user = findUserById(id);
+        user.setStatus(newStatus);
+        if ("APPROVED".equals(newStatus)) {
+            user.setPersonnelId(generatePersonnelID(user.getUsername()));
+        }
+        auditService.logAction("STATUS_CHANGED", "ADMIN", user, "Status changed to " + newStatus);
+        return userRepository.save(user);
+    }
+
+    public User findUserByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        return findUserByUsername(username);
+    }
+
+    public List<UserInfo> findUsersByGroup(String groupName) {
+        return userRepository.findAll().stream()
                 .filter(user -> user.getGroupsalloted() != null && user.getGroupsalloted().contains(groupName))
-                .map(UserInfo::new) // Convert each User to a UserDTO
+                .map(UserInfo::new)
                 .collect(Collectors.toList());
-     }
+    }
+
+    private String generatePersonnelID(String username) {
+        return Base64.getEncoder().encodeToString(username.getBytes());
+    }
 }
