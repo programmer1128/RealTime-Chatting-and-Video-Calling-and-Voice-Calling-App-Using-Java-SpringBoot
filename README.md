@@ -113,42 +113,10 @@ backend_server/
 
 ---
 
-## ⚙️ Setup & Installation
+## Future Scope
+Add dynamic resizeable UI for the mobile and web interfaces
 
-### Prerequisites
-- Java 21+
-- Maven 3.6+
-- MySQL (configured in `application.properties`)
+## Copyright
+Copyright (c) 2026 Aritra Banerjee. All Rights Reserved.
 
-### Installation Steps
-
-1.  **Clone the Repository**:
-    ```bash
-    git clone https://github.com/yourusername/RealTimeChattingandVideoCallingApp.git
-    cd RealTimeChattingandVideoCallingApp/backend_server
-    ```
-
-2.  **Configure Database**:
-    Update `src/main/resources/application.properties` with your MySQL credentials:
-    ```properties
-    spring.datasource.url=jdbc:mysql://localhost:3306/your_db
-    spring.datasource.username=your_user
-    spring.datasource.password=your_password
-    ```
-
-3.  **Build and Run**:
-    ```bash
-    ./mvnw clean install
-    ./mvnw spring-boot:run
-    ```
-
-The server will start on `http://localhost:8080`.
-
----
-
-## 🧪 Testing
-The project includes automated context loading tests. Run them using:
-```bash
-./mvnw test
-```
-
+This project and its source code are proprietary and confidential. Unauthorized copying of this repository or any of its files, via any medium, is strictly prohibited. No license is granted to use, modify, or distribute this code.

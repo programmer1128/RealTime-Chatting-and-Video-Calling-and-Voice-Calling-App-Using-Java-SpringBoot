@@ -16,7 +16,7 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-@Component
+@Component 
 public class VideoCallWebSocketHandler extends TextWebSocketHandler 
 {
 
@@ -117,7 +117,7 @@ public class VideoCallWebSocketHandler extends TextWebSocketHandler
              });
          }
      }
-
+ 
      @Override
      public void afterConnectionClosed(WebSocketSession session, CloseStatus status) 
      {
